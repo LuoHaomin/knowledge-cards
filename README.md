@@ -35,7 +35,7 @@ knowledge-cards/
 │   ├── card-templates.md     # 概念卡/定理卡模板、写作细则、拆分判据
 │   └── canvas-conventions.md # canvas JSON 格式、颜色约定、布局脚本参数
 ├── scripts/
-│   ├── init_kb.sh            # 初始化新库结构并安装脚本
+│   ├── init_kb.sh            # 初始化新库结构
 │   ├── 生成导航.sh            # 卡片清单 + 断链报告
 │   └── 布局画布.sh            # canvas 自动布局（力导向 / --分层）
 ├── README.md
@@ -44,8 +44,4 @@ knowledge-cards/
 
 ## 快速上手
 
-```bash
-bash scripts/init_kb.sh <目标目录> <板块1> <板块2> ...
-```
-
-初始化后，日常维护只有两个动作：新卡放进板块文件夹；随手跑 `./生成导航.sh` 刷新索引。
+对 Agent 说"在 `<目录>` 建一个知识库，板块为……"，或直接"把这篇论文的知识点整理进 `<库>`"。Agent 会调用 skill 自带脚本完成初始化、导航生成与画布布局——**脚本由 Agent 从 skill 目录以绝对路径调用，不复制进知识库，用户不需要运行任何命令**。

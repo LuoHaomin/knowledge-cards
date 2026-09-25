@@ -1,10 +1,16 @@
 #!/bin/bash
 # 生成 导航.md：按板块列出全部卡片（双链、tags、一句话摘要）+ 断链报告
-# 用法：在知识库目录下执行  ./生成导航.sh
-cd "$(dirname "$0")"
+# Agent 用法（从 skill 目录以绝对路径调用，不复制进知识库）：
+#   bash <skill目录>/scripts/生成导航.sh <知识库根目录>
+if [ $# -lt 1 ]; then
+    echo "用法: 生成导航.sh <知识库根目录>" >&2
+    exit 1
+fi
+KB="$(cd "$1" && pwd)" || { echo "目录不存在: $1" >&2; exit 1; }
 
-python3 <<'EOF'
-import os, re, glob
+python3 - "$KB" <<'EOF'
+import os, re, glob, sys
+os.chdir(sys.argv[1])
 
 boards = sorted(d for d in os.listdir('.') if re.match(r'^\d+-', d) and os.path.isdir(d))
 
@@ -20,7 +26,7 @@ def parse_card(path):
     return tags, aliases, abstract
 
 lines = ['# 知识库导航', '',
-         '> 由 `./生成导航.sh` 自动生成——请勿手工编辑；新增卡片后重新运行即可。', '']
+         '> 由 knowledge-cards skill 的 生成导航.sh 自动生成——请勿手工编辑。', '']
 
 all_names = {os.path.splitext(os.path.basename(f))[0]
              for b in boards for f in glob.glob(f'{b}/*.md')}

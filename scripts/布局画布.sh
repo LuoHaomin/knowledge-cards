@@ -1,16 +1,31 @@
 #!/bin/bash
 # canvas 自动布局（力导向，默认）：
 #   节点互斥 + 连线弹簧 + 向心力，迭代收敛；连线方向按最终几何关系自动选边
-# 用法：
-#   ./布局画布.sh 文件1.canvas [文件2.canvas ...]   # 力导向
-#   ./布局画布.sh --分层 文件.canvas               # 分层依赖布局（适合纯 DAG）
-#   ./布局画布.sh                                   # 无参数处理所有板块画布
-cd "$(dirname "$0")"
+# Agent 用法（从 skill 目录以绝对路径调用，不复制进知识库）：
+#   bash <skill目录>/scripts/布局画布.sh <知识库根目录> [画布...]        # 力导向
+#   bash <skill目录>/scripts/布局画布.sh --分层 <知识库根目录> 画布.canvas # 分层依赖布局（适合纯 DAG）
+#   画布参数为文件名/相对路径时相对库根解析；缺省处理库根下所有板块画布
 LAYERED=0
 if [ "$1" = "--分层" ]; then LAYERED=1; shift; fi
-if [ $# -eq 0 ]; then set -- [0-9]*.canvas; fi
+if [ $# -lt 1 ]; then
+    echo "用法: 布局画布.sh [--分层] <知识库根目录> [画布...]" >&2
+    exit 1
+fi
+KB="$(cd "$1" && pwd)" || { echo "目录不存在: $1" >&2; exit 1; }
+shift
+if [ $# -eq 0 ]; then
+    set -- "$KB"/[0-9]*.canvas
+    if [ ! -e "$1" ]; then
+        echo "库根下没有板块画布（[0-9]*.canvas）" >&2
+        exit 0
+    fi
+fi
+canvases=()
+for a in "$@"; do
+    case "$a" in /*) canvases+=("$a");; *) canvases+=("$KB/$a");; esac
+done
 
-python3 - "$LAYERED" "$@" <<'EOF'
+python3 - "$LAYERED" "${canvases[@]}" <<'EOF'
 import json, sys, math, random
 from collections import deque
 
@@ -123,7 +138,6 @@ def layered_layout(byid, edges):
         u = q.popleft()
         for t in outs[u]:
             layer[t] = max(layer[t], layer[u]+1)
-            indeg[t] -= 1
             if indeg[t] == 0: q.append(t)
     layers = sorted(set(layer.values()))
     L = {l: sorted(i for i in byid if layer[i] == l) for l in layers}
